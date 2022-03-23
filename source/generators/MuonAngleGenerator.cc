@@ -62,8 +62,8 @@ MuonAngleGenerator::MuonAngleGenerator():
   msg_->DeclareProperty("angles_on", angular_generation_,
 			"Distribute muon directions according to file?");
 
-  msg_->DeclareProperty("angle_file", ang_file_,
-			"Name of the file containing angular distribution.");
+  //msg_->DeclareProperty("angle_file", ang_file_,
+  //	"Name of the file containing angular distribution.");
   msg_->DeclareProperty("angle_dist", dist_name_,
 			"Name of the angular distribution histogram.");
 
@@ -95,10 +95,10 @@ void MuonAngleGenerator::SetupAngles()
   rPhi_->rotateY(-axis_rotation_);
 
   // Get the Angular distribution from file.
-  TFile angle_file(ang_file_);
-  angle_file.GetObject(dist_name_, distribution_);
-  distribution_->SetDirectory(0);
-  angle_file.Close();
+  //TFile angle_file(ang_file_);
+  //angle_file.GetObject(dist_name_, distribution_);
+  //distribution_->SetDirectory(0);
+  //angle_file.Close();
 
   // Get the solid to check overlap
   geom_solid_ =
@@ -151,6 +151,8 @@ void MuonAngleGenerator::GeneratePrimaryVertex(G4Event* event)
   // Add particle to the vertex and this to the event
   vertex->SetPrimary(particle);
   event->AddPrimaryVertex(vertex);
+
+  std::cout <<"vertex"<<position;
 }
 
 
@@ -179,16 +181,23 @@ void MuonAngleGenerator::GetDirection(G4ThreeVector& dir)
   // From north
   G4double zenith  = 0.;
   G4double azimuth = 0.;
-  distribution_->GetRandom2(azimuth, zenith);
+  G4double czen    = 0.;
+  //distribution_->GetRandom2(azimuth, czen);
   // !! Current distribution in units of pi
-  zenith  *= pi;
-  azimuth *= pi;
-
+  czen =G4UniformRand()*0.6+0.4;
+  zenith = acos(czen);
+  azimuth = 2.0*pi*G4UniformRand();
+  
   dir.setX(sin(zenith) * sin(azimuth));
   dir.setY(-cos(zenith));
   dir.setZ(-sin(zenith) * cos(azimuth));
 
   dir *= *rPhi_;
+
+
+  
+  std::cout <<"alpha" << zenith <<"beta" <<azimuth;
+  std::cout <<"place"<<dir;
 }
 
 

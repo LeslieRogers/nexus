@@ -20,6 +20,7 @@ namespace nexus {class NextNewVessel; }
 namespace nexus {class NextNewIcs; }
 namespace nexus {class NextNewInnerElements; }
 namespace nexus {class BoxPointSampler;}
+namespace nexus { class SpherePointSampler;}
 namespace nexus {class CylinderPointSampler;}
 namespace nexus {class CalibrationSource;}
 namespace nexus {class NaIScintillator;}
@@ -77,6 +78,7 @@ namespace nexus {
     ExtraVessel* extra_;
 
     BoxPointSampler* lab_gen_; ///< Vertex generator
+    SpherePointSampler*lab_wal_;
     CylinderPointSampler* lat_source_gen_;
     CylinderPointSampler* axial_source_gen_;
     CylinderPointSampler* source_gen_up_;

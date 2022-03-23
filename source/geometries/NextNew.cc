@@ -19,6 +19,7 @@
 #include "Th228Source.h"
 #include "Na22Source.h"
 #include "CylinderPointSampler.h"
+#include "SpherePointSampler.h"
 #include "BoxPointSampler.h"
 #include "Visibilities.h"
 #include "CalibrationSource.h"
@@ -44,14 +45,14 @@
 #include <G4SubtractionSolid.hh>
 #include <G4UnionSolid.hh>
 
+
 #include <CLHEP/Units/SystemOfUnits.h>
 
 namespace nexus {
 
   REGISTER_CLASS(NextNew, GeometryBase)
-
   using namespace CLHEP;
-
+  
   NextNew::NextNew():
     GeometryBase(),
     // Lab dimensions
@@ -63,17 +64,13 @@ namespace nexus {
     calib_port_(""),
     dist_scint_(25.*cm),
     lead_castle_(true),
-    lab_walls_(false),
     disk_source_(false),
     source_mat_(""),
     source_dist_from_anode_(15.*cm),
-    pedestal_pos_(-568.*mm),
-    specific_vertex_{}
+    pedestal_pos_(-568.*mm)
     //   ext_source_distance_(0.*mm)
     // Buffer gas dimensions
   {
-    //Lab walls
-    hallA_walls_ = new LSCHallA();
     //Shielding
     shielding_ = new Next100Shielding();
     //Pedestal
@@ -109,7 +106,6 @@ namespace nexus {
     scint_dist_cmd.SetRange("scint_distance>=0.");
 
     msg_->DeclareProperty("lead_castle", lead_castle_, "Placement of lead castle");
-    msg_->DeclareProperty("lab_walls", lab_walls_, "Placement of Hall A walls");
     msg_->DeclareProperty("disk_source", disk_source_, "External disk-shape calibration source");
     msg_->DeclareProperty("source_material", source_mat_, "Kind of external disk-shape calibration source");
 
@@ -119,9 +115,6 @@ namespace nexus {
     source_dist_cmd.SetUnitCategory("Length");
     source_dist_cmd.SetParameterName("distance_from_anode", false);
     source_dist_cmd.SetRange("distance_from_anode>=0.");
-
-    msg_->DeclarePropertyWithUnit("specific_vertex", "mm",  specific_vertex_,
-      "Set generation vertex.");
 
     cal_ = new CalibrationSource();
 
@@ -138,7 +131,6 @@ namespace nexus {
   NextNew::~NextNew()
   {
     //deletes
-    delete hallA_walls_;
     delete shielding_;
     delete pedestal_;
     delete mini_castle_;
@@ -168,25 +160,12 @@ namespace nexus {
     // LAB /////////////////////////////////////////////////////////////
     // This is just a volume of air surrounding the detector so that events
     //(from calibration sources or cosmic rays) can be generated on the outside.
-    if (lab_walls_){
-      // We want to simulate the walls (for muons in most cases).
-      hallA_walls_->Construct();
-      hallA_logic_ = hallA_walls_->GetLogicalVolume();
-      G4double hallA_length = hallA_walls_->GetLSCHallALength();
-      // Since the walls will be displaced need to make the
-      // "lab" double sized to be sure.
-      G4Box* lab_solid = new G4Box("LAB", hallA_length,
-				   hallA_length, hallA_length);
-      G4Material *vacuum =
-	G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
-      lab_logic_ = new G4LogicalVolume(lab_solid, vacuum, "LAB");
-      this->SetSpan(2 * hallA_length);
-    } else {
-      G4Box* lab_solid =
-	new G4Box("LAB", lab_size_/2., lab_size_/2., lab_size_/2.);
 
-      lab_logic_ = new G4LogicalVolume(lab_solid, G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"), "LAB");
-    }
+    G4Box* lab_solid =
+      new G4Box("LAB", lab_size_/2., lab_size_/2., lab_size_/2.);
+
+    lab_logic_ = new G4LogicalVolume(lab_solid, G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"), "LAB");
+
     lab_logic_->SetVisAttributes(G4VisAttributes::Invisible);
 
     // Set this volume as the wrapper for the whole geometry
@@ -234,19 +213,9 @@ namespace nexus {
     displ_ = G4ThreeVector(0., 0., inner_elements_->GetELzCoord());
     G4RotationMatrix rot;
     rot.rotateY(rot_angle_);
-    if (lab_walls_){
-      G4ThreeVector castle_pos(0., hallA_walls_->GetLSCHallACastleY(),
-			       hallA_walls_->GetLSCHallACastleZ());
-      new G4PVPlacement(G4Transform3D(rot, castle_pos),
-       			surroundings_logic, surroundings_name,
-       			hallA_logic_, false, 0, false);
-      new G4PVPlacement(0, displ_ - castle_pos, hallA_logic_, "Hall_A",
-      			lab_logic_, false, 0, false);
-    } else {
-      new G4PVPlacement(G4Transform3D(rot, displ_),
-			surroundings_logic, surroundings_name,
-			lab_logic_, false, 0, false);
-    }
+    new G4PVPlacement(G4Transform3D(rot, displ_),
+                      surroundings_logic, surroundings_name,
+                      lab_logic_, false, 0, false);
 
      //ICS
     ics_->SetLogicalVolume(vessel_gas_logic);
@@ -415,6 +384,12 @@ namespace nexus {
     lab_gen_ =
       new BoxPointSampler(lab_size_ - 1.*m, lab_size_ - 1.*m, lab_size_ - 1.*m, 1.*m,G4ThreeVector(0.,0.,0.),0);
 
+    // Create a vertex generator for a sphere                                                                                                                                                
+    lab_wal_ = 
+      new SpherePointSampler((2.*m - 10.*cm)/2.,8.*cm, G4ThreeVector(0.,0.,0.), new G4RotationMatrix(),0,twopi,0,pi);
+
+
+
     // These are the positions of the source inside the capsule
     G4ThreeVector gen_pos_lat = source_pos - G4ThreeVector(cal_->GetSourceZpos(), 0., 0.);
     G4ThreeVector gen_pos_axial = source_pos + G4ThreeVector(0, 0., cal_->GetSourceZpos());
@@ -443,6 +418,10 @@ namespace nexus {
 
 
 
+
+
+
+
   G4ThreeVector NextNew::GenerateVertex(const G4String& region) const
   {
     G4ThreeVector vertex(0.,0.,0.);
@@ -450,6 +429,11 @@ namespace nexus {
     //AIR AROUND SHIELDING
     if (region == "LAB") {
       vertex = lab_gen_->GenerateVertex("INSIDE");
+    }
+
+    // Create a vertex generator for a sphere
+    else if (region == "EXTERNAL_SPHERE"){
+      vertex = lab_wal_->GenerateVertex("SURFACE");
     }
     /// Calibration source in capsule, placed inside Jordi's lead,
     /// at the end (lateral and axial ports).
@@ -493,7 +477,7 @@ namespace nexus {
       vertex = shielding_->GenerateVertex(region);
     }
     //PEDESTAL
-    else if (region == "PEDESTAL_BOARD") {
+    else if (region == "PEDESTAL") {
       vertex = pedestal_->GenerateVertex(region);
     }
     // EXTRA ELEMENTS
@@ -501,14 +485,6 @@ namespace nexus {
       G4ThreeVector ini_vertex = extra_->GenerateVertex(region);
       ini_vertex.rotate(pi/2., G4ThreeVector(1., 0., 0.));
       vertex = ini_vertex + extra_pos_;
-    }
-    // Lab walls
-    else if ((region == "HALLA_INNER") || (region == "HALLA_OUTER")){
-      if (!lab_walls_)
-        G4Exception("[NextNew]", "GenerateVertex()", FatalException,
-                    "This vertex generation region must be used with lab_walls == true!");
-      vertex = hallA_walls_->GenerateVertex(region);
-      vertex = displ_ + vertex;
     }
 
     //  MINI CASTLE and RADON
@@ -548,43 +524,23 @@ namespace nexus {
              (region == "XENON") ||
              (region == "ACTIVE") ||
              (region == "BUFFER") ||
-             (region == "EL_GAP") ||
              (region == "EL_TABLE") ||
+             (region == "AD_HOC") ||
              (region == "CATHODE")||
-             (region == "TRACKING_FRAMES") ||
+	     (region == "TRACKING_FRAMES") ||
              (region == "SUPPORT_PLATE") ||
              (region == "DICE_BOARD") ||
              (region == "DB_PLUG")) {
       vertex = inner_elements_->GenerateVertex(region);
-    }
-    // AD_HOC is not rotated and shifted because it is passed by the user
-    else if (region == "AD_HOC") {
-      return specific_vertex_;
     }
     else {
       G4Exception("[NextNew]", "GenerateVertex()", FatalException,
 		  "Unknown vertex generation region!");
     }
 
-    // The LSC HallA vertices are already corrected so no need.
-    if ((region == "HALLA_OUTER") ||
-        (region == "HALLA_INNER"))
+    // AD_HOC is the only vertex that is not rotated and shifted because it is passed by the user
+    if  (region == "AD_HOC")
       return vertex;
-
-    // In EL_GAP, x and y coordinates are passed by the user,
-    // but the z coordinate is not. Therefore, rotation + displacement
-    // must be applied to get the correct z, but x and y must be left
-    // unchanged.
-    if (region == "EL_GAP") {
-      // First rotate, then shift to return the correct z coordinate
-      vertex.rotate(rot_angle_, G4ThreeVector(0., 1., 0.));
-      vertex = vertex + displ_;
-
-      // Change back x coordinate alone (y is not touched).
-      vertex.setX(-vertex.x());
-
-      return vertex;
-    }
 
     // First rotate, then shift
     vertex.rotate(rot_angle_, G4ThreeVector(0., 1., 0.));
