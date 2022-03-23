@@ -97,25 +97,32 @@ namespace nexus {
 
     // Field Cage regions
     if ((region == "CENTER") ||
-	(region == "ACTIVE") ||
-	(region == "BUFFER") ||
-	(region == "XENON") ||
-  (region == "EL_GAP") ||
-	(region == "LIGHT_TUBE")) {
+        (region == "ACTIVE") ||
+        (region == "CATHODE_RING") ||
+        (region == "BUFFER") ||
+        (region == "XENON")  ||
+        (region == "EL_GAP") ||
+        (region == "LIGHT_TUBE") ||
+        (region == "HDPE_TUBE") ||
+        (region == "FIELD_RING") ||
+        (region == "GATE_RING") ||
+        (region == "ANODE_RING") ||
+        (region == "RING_HOLDER")) {
       vertex = field_cage_->GenerateVertex(region);
     }
     // Energy Plane regions
     else if ((region == "EP_COPPER_PLATE") ||
              (region == "SAPPHIRE_WINDOW") ||
              (region == "OPTICAL_PAD") ||
-	           (region == "PMT") ||
+             (region == "PMT") ||
              (region == "PMT_BODY") ||
-	           (region == "PMT_BASE")) {
+             (region == "PMT_BASE")) {
       vertex = energy_plane_->GenerateVertex(region);
     }
     // Tracking Plane regions
     else if ((region == "TP_COPPER_PLATE") ||
-             (region == "SIPM_BOARD")) {
+             (region == "SIPM_BOARD") ||
+             (region == "DB_PLUG")) {
       vertex = tracking_plane_->GenerateVertex(region);
     }
     else {

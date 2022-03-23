@@ -38,15 +38,10 @@ namespace nexus {
     lab_size_ (5. * m),
 
     // common used variables in geomety components
-    gate_tracking_plane_distance_(30. * mm), // to be confirmed
-    gate_sapphire_wdw_distance_  (1460.5 * mm),
-
-    // Nozzles external diam and y positions
-    nozzle_ext_diam_ (9. * cm),
-    up_nozzle_ypos_ (20. * cm),
-    central_nozzle_ypos_ (0. * cm),
-    down_nozzle_ypos_ (-20. * cm),
-    bottom_nozzle_ypos_(-53. * cm),
+    // 0.1 mm grid thickness
+    // note that if grid thickness change it must be also changed in Next100FieldCage.cc
+    gate_tracking_plane_distance_((26.1 + 0.1)   * mm),
+    gate_sapphire_wdw_distance_  ((1458.2 - 0.1) * mm),
 
     specific_vertex_{},
     lab_walls_(false)
@@ -70,8 +65,7 @@ namespace nexus {
   hallA_walls_ = new LSCHallA();
 
   // Vessel
-  vessel_ = new Next100Vessel(nozzle_ext_diam_, up_nozzle_ypos_, central_nozzle_ypos_,
-			      down_nozzle_ypos_, bottom_nozzle_ypos_);
+  vessel_ = new Next100Vessel();
 
   // Internal copper shielding
   ics_ = new Next100Ics();
@@ -116,7 +110,7 @@ namespace nexus {
       lab_logic_ = new G4LogicalVolume(lab_solid,
         G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"), "LAB");
     }
-    lab_logic_->SetVisAttributes(G4VisAttributes::Invisible);
+    lab_logic_->SetVisAttributes(G4VisAttributes::GetInvisible());
 
     // Set this volume as the wrapper for the whole geometry
     // (i.e., this is the volume that will be placed in the world)
@@ -216,21 +210,27 @@ namespace nexus {
 
     // Inner elements (photosensors' planes and field cage)
     else if ((region == "CENTER") ||
-	     (region == "ACTIVE") ||
-	     (region == "BUFFER") ||
-	     (region == "XENON") ||
-	     (region == "LIGHT_TUBE") ||
-       (region == "EL_GAP") ||
-	     (region == "EP_COPPER_PLATE") ||
-	     (region == "SAPPHIRE_WINDOW") ||
-	     (region == "OPTICAL_PAD") ||
-	     (region == "PMT_BODY") ||
-	     (region == "PMT") ||
-	     (region == "PMT_BASE") ||
-	     (region == "TP_COPPER_PLATE") ||
-	     (region == "DICE_BOARD") ||
-	     (region == "AXIAL_PORT") ||
-	     (region == "EL_TABLE") ) {
+             (region == "ACTIVE") ||
+             (region == "CATHODE_RING") ||
+             (region == "BUFFER") ||
+             (region == "XENON") ||
+             (region == "LIGHT_TUBE") ||
+             (region == "HDPE_TUBE") ||
+             (region == "EL_GAP") ||
+             (region == "EP_COPPER_PLATE") ||
+             (region == "SAPPHIRE_WINDOW") ||
+             (region == "OPTICAL_PAD") ||
+             (region == "PMT_BODY") ||
+             (region == "PMT") ||
+             (region == "PMT_BASE") ||
+             (region == "TP_COPPER_PLATE") ||
+             (region == "SIPM_BOARD") ||
+             (region == "DB_PLUG") ||
+             (region == "EL_TABLE") ||
+             (region == "FIELD_RING") ||
+             (region == "GATE_RING") ||
+             (region == "ANODE_RING") ||
+             (region == "RING_HOLDER")) {
       vertex = inner_elements_->GenerateVertex(region);
     }
 

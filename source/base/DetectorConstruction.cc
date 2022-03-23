@@ -7,7 +7,6 @@
 // ----------------------------------------------------------------------------
 
 #include "DetectorConstruction.h"
-
 #include "GeometryBase.h"
 
 #include <G4Box.hh>
@@ -22,7 +21,7 @@ using namespace nexus;
 
 
 
-DetectorConstruction::DetectorConstruction(): geometry_(0)
+DetectorConstruction::DetectorConstruction(): geometry_(nullptr)
 {
 }
 
@@ -30,7 +29,6 @@ DetectorConstruction::DetectorConstruction(): geometry_(0)
 
 DetectorConstruction::~DetectorConstruction()
 {
-  delete geometry_;
 }
 
 
@@ -61,7 +59,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4LogicalVolume* world_logic =
   new G4LogicalVolume(world_solid, vacuum, "WORLD", 0, 0, 0, true);
 
-  world_logic->SetVisAttributes(G4VisAttributes::Invisible);
+  world_logic->SetVisAttributes(G4VisAttributes::GetInvisible());
 
   G4PVPlacement* world_physi =
   new G4PVPlacement(0, G4ThreeVector(), world_logic, "WORLD", 0, false, 0);
