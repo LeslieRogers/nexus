@@ -216,26 +216,26 @@ void MuonGenerator::GeneratePrimaryVertex(G4Event* event)
   else {
 
     // User specified muon direction in some fixed direction
-    if ( user_dir_ != G4ThreeVector{}) {
-      p_dir   = user_dir_.unit();
-      zenith  = p_dir.getTheta();
-      azimuth = p_dir.getPhi() + pi; // change azimuth interval to be between 0, twopi
-    }
+    //if ( user_dir_ != G4ThreeVector{}) {
+    //p_dir   = user_dir_.unit();
+    //zenith  = p_dir.getTheta();
+    //azimuth = p_dir.getPhi() + pi; // change azimuth interval to be between 0, twopi
+    //}
 
     // Sample direction via cos^2 distribution for zenith, uniform azimuth
-    else {
-      zenith  = GetZenith();
-      azimuth = GetAzimuth(); // Returns from 0 to 2pi
+    //else {
+    zenith  = GetZenith();
+    azimuth = GetAzimuth(); // Returns from 0 to 2pi
 
-      // Calculate the vector components of the muon
-      p_dir.setX(sin(zenith) * sin(azimuth));
-      p_dir.setY(-cos(zenith));
-      p_dir.setZ(-sin(zenith) * cos(azimuth));
+    // Calculate the vector components of the muon
+    p_dir.setX(sin(zenith) * sin(azimuth));
+    p_dir.setY(-cos(zenith));
+    p_dir.setZ(-sin(zenith) * cos(azimuth));
 
-      // Rotate about the Y-Axis
-      p_dir *= *rPhi_;
+    // Rotate about the Y-Axis
+    p_dir *= *rPhi_;
 
-    }
+    //}
 
   }
 
@@ -329,7 +329,9 @@ void MuonGenerator::GetDirection(G4ThreeVector& dir, G4double& zenith, G4double&
 
 G4double MuonGenerator::GetZenith() const
 {
-  return fRandomGeneral_->fire()*pi/2;
+  G4double czen=G4UniformRand()*0.6+0.4;
+  G4double zenith=acos(czen);
+  return zenith;
 }
 
 

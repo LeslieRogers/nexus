@@ -19,6 +19,7 @@
 #include "Th228Source.h"
 #include "Na22Source.h"
 #include "CylinderPointSampler.h"
+#include "SpherePointSampler.h"
 #include "BoxPointSampler.h"
 #include "Visibilities.h"
 #include "CalibrationSource.h"
@@ -419,6 +420,11 @@ namespace nexus {
     lab_gen_ =
       new BoxPointSampler(lab_size_ - 1.*m, lab_size_ - 1.*m, lab_size_ - 1.*m, 1.*m,G4ThreeVector(0.,0.,0.),0);
 
+    //Create a vertex generator for a sphere
+    lab_wal_=
+      new SpherePointSampler((2.*m-10.*cm)/2.,8.*cm, G4ThreeVector(0.,0.,0.), new G4RotationMatrix(),0,twopi,0,pi);
+
+
     // These are the positions of the source inside the capsule
     G4ThreeVector gen_pos_lat = source_pos - G4ThreeVector(cal_->GetSourceZpos(), 0., 0.);
     G4ThreeVector gen_pos_axial = source_pos + G4ThreeVector(0, 0., cal_->GetSourceZpos());
@@ -455,6 +461,13 @@ namespace nexus {
     if (region == "LAB") {
       vertex = lab_gen_->GenerateVertex("INSIDE");
     }
+    
+    //Create a vertex generator for a sphere
+    else if (region == "EXTERNAL_SPHERE"){
+      vertex=lab_wal_->GenerateVertex("SURFACE");
+    }
+
+
     /// Calibration source in capsule, placed inside Jordi's lead,
     /// at the end (lateral and axial ports).
     else if (region == "EXTERNAL_PORT_ANODE") {
