@@ -461,6 +461,10 @@ namespace opticalprops {
   {
     // An argon gas proportional scintillation counter with UV avalanche photodiode scintillation
     // readout C.M.B. Monteiro, J.A.M. Lopes, P.C.P.S. Simoes, J.M.F. dos Santos, C.A.N. Conde
+    // 
+    // May 2023:
+    // Updated scintillation decay and yields from:
+    // Triplet Lifetime in Gaseous Argon. Michael Akashi-Ronquest et al.
 
     G4MaterialPropertiesTable* mpt = new G4MaterialPropertiesTable();
 
@@ -516,9 +520,9 @@ namespace opticalprops {
     // CONST PROPERTIES
     mpt->AddConstProperty("SCINTILLATIONYIELD", sc_yield);
     mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT1",   6.*ns);
-    mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT2",   37.*ns);
-    mpt->AddConstProperty("SCINTILLATIONYIELD1", .342);
-    mpt->AddConstProperty("SCINTILLATIONYIELD2", .658);
+    mpt->AddConstProperty("SCINTILLATIONTIMECONSTANT2",   3480.*ns);
+    mpt->AddConstProperty("SCINTILLATIONYIELD1", .136);
+    mpt->AddConstProperty("SCINTILLATIONYIELD2", .864);
     mpt->AddConstProperty("RESOLUTIONSCALE",    1.0);
     mpt->AddConstProperty("ATTACHMENT",         e_lifetime, 1);
 
@@ -735,6 +739,68 @@ namespace opticalprops {
     return mpt;
   }
 
+  /// PolishedAl ///
+  G4MaterialPropertiesTable* PolishedAl()
+  {
+    G4MaterialPropertiesTable* mpt = new G4MaterialPropertiesTable();
+
+    std::vector<G4double> ENERGIES = {
+       h_Planck * c_light / (2456.42541 * nm), h_Planck * c_light / (2396.60266 * nm),
+       h_Planck * c_light / (2276.95716 * nm), h_Planck * c_light / (2159.52733 * nm),
+       h_Planck * c_light / (2037.66617 * nm), h_Planck * c_light / (1918.02068 * nm),
+       h_Planck * c_light / (1798.37518 * nm), h_Planck * c_light / (1676.51403 * nm),
+       h_Planck * c_light / (1559.08419 * nm), h_Planck * c_light / (1437.22304 * nm),
+       h_Planck * c_light / (1319.79321 * nm), h_Planck * c_light / (1197.93205 * nm),
+       h_Planck * c_light / (1078.28656 * nm), h_Planck * c_light / (956.42541 * nm),
+       h_Planck * c_light / (838.99557 * nm), h_Planck * c_light / (717.13442 * nm),
+       h_Planck * c_light / (597.48892 * nm), h_Planck * c_light / (477.84343 * nm),
+       h_Planck * c_light / (418.02068 * nm), h_Planck * c_light / (358.19793 * nm),
+       h_Planck * c_light / (293.94387 * nm)
+    };
+    std::vector<G4double> REFLECTIVITY = {
+      .99088, .99082, .98925, .98623, .98611,
+      .98163, .98006, .97849, .97401, .97098,
+      .96941, .96784, .96481, .96033, .96167,
+      .96301, .96289, .96278, .96126, .95830,
+      .94224
+    };
+    // DOI:10.4236/ampc.2015.511046
+    mpt->AddProperty("REFLECTIVITY", ENERGIES, REFLECTIVITY);
+
+    // REFLEXION BEHAVIOR
+    std::vector<G4double> ENERGIES_2    = {optPhotMinE_, optPhotMaxE_};
+    // Specular reflection about the normal to a microfacet.
+    // Such a vector is chosen according to a gaussian distribution with
+    // sigma = SigmaAlhpa (in rad) and centered in the average normal.
+    std::vector<G4double> specularlobe  = {0., 0.};
+    // specular reflection about the average normal
+    std::vector<G4double> specularspike = {0., 0.};
+    // 180 degrees reflection.
+    std::vector<G4double> backscatter   = {0., 0.};
+    // 1 - the sum of these three last parameters is the percentage of Lambertian reflection
+
+    mpt->AddProperty("SPECULARLOBECONSTANT", ENERGIES_2, specularlobe);
+    mpt->AddProperty("SPECULARSPIKECONSTANT",ENERGIES_2, specularspike);
+    mpt->AddProperty("BACKSCATTERCONSTANT",  ENERGIES_2, backscatter);
+
+    // REFRACTIVE INDEX
+    std::vector<G4double> ENERGIES_3    = {
+      0.005 * eV, 0.19581 * eV, 0.43227 * eV,
+      0.84211 * eV, 1.2254 * eV, 1.4477 * eV,
+      1.7831 * eV, 2.8203 * eV, 3.6216 * eV,
+      5.0548 * eV, 7.0554 * eV, 9.4450 * eV,
+      12.645 * eV, 14.939 * eV, 16.238 * eV,
+      18.4 * eV, 20. * eV
+    };
+    std::vector<G4double> rIndex = {
+      473.49, 12.843, 3.8841, 1.437, 1.4821, 2.4465, 1.6203, 0.58336, 0.32634, 0.1686,
+      0.089866, 0.051461, 0.039232, 0.11588, 0.39013, 0.58276, 0.66415
+    };
+    // from https://refractiveindex.info/?shelf=3d&book=metals&page=aluminium
+    mpt->AddProperty("RINDEX", ENERGIES_3, rIndex);
+
+    return mpt;
+  }
 
   /// TPB (tetraphenyl butadiene) ///
   G4MaterialPropertiesTable* TPB()
@@ -805,22 +871,22 @@ namespace opticalprops {
       h_Planck * c_light / (250. * nm),  h_Planck * c_light / (230. * nm),
       h_Planck * c_light / (210. * nm),  h_Planck * c_light / (190. * nm),
       h_Planck * c_light / (170. * nm),  h_Planck * c_light / (150. * nm),
-      h_Planck * c_light / (100. * nm),  optPhotMaxE_
+      optPhotMaxE_
     };
 
     std::vector<G4double> WLS_absLength = {
-      noAbsLength_,
+      noAbsLength_,                 // ~6200 nm
       noAbsLength_,   50. * nm,     // 380 , 370 nm
-      30. * nm,      30. * nm,     // 360 , 330 nm
-      50. * nm,      80. * nm,     // 320 , 310 nm
+      30. * nm,      30. * nm,      // 360 , 330 nm
+      50. * nm,      80. * nm,      // 320 , 310 nm
       100. * nm,     100. * nm,     // 300 , 270 nm
       400. * nm,     400. * nm,     // 250 , 230 nm
       350. * nm,     250. * nm,     // 210 , 190 nm
       350. * nm,     400. * nm,     // 170 , 150 nm
-      400. * nm,     noAbsLength_   // 100 nm
+      400. * nm                     // ~108 nm
     };
 
-    //for (int i=0; i<WLS_abs_entries; i++)
+    //for (int i=0; i<WLS_abs_energy.size(); i++)
     //  G4cout << "* TPB WLS absLength:  " << std::setw(8) << WLS_abs_energy[i] / eV
     //         << " eV  ==  " << std::setw(8) << (h_Planck * c_light / WLS_abs_energy[i]) / nm
     //         << " nm  ->  " << std::setw(6) << WLS_absLength[i] / nm << " nm" << G4endl;

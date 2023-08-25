@@ -1,7 +1,8 @@
 ## ----------------------------------------------------------------------------
-## nexus | NEW_translated_bb0nu.config.mac
+## nexus | NEW_2nuECEC.config.mac
 ##
-## Configuration macro to simulate bb0nu decays in the NEW detector geometry.
+##  Configuration macro to simulate 2-neutrino ECEC decays
+##  in the NEW detector geometry
 ##
 ## The NEXT Collaboration
 ## ----------------------------------------------------------------------------
@@ -12,13 +13,15 @@
 
 /process/em/verbose 0
 
-/nexus/random_seed 542862
+/Generator/ECEC/region CENTER
+/Generator/ECEC/atomic_number 52
+/Generator/ECEC/shell K
 
-/Geometry/NextNew/pressure 15. bar
+/Geometry/NextNew/pressure 10. bar
 /Geometry/NextNew/elfield false
-
-/control/execute macros/generators/GenbbTranslatedInterface.mac
 
 /control/execute macros/physics/IonizationElectron.mac
 
-/nexus/persistency/output_file bb0_GS_mode1_S1L1f.next
+/nexus/persistency/output_file new_ecec.next
+
+/nexus/random_seed 542862

@@ -4,10 +4,12 @@
 .sconsign.dblite
 source/.DS_Store
 *~
+.vscode
 
 # nexus output files
 *.h5
 *.root
+*.csv
 
 # nexus auxiliary files
 *.dat

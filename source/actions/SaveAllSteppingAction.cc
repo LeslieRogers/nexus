@@ -1,8 +1,19 @@
 // ----------------------------------------------------------------------------
 // nexus | SaveAllSteppingAction.cc
 //
-// This class sets the store_steps flag of the persistency manager
-// so all steps are saved.
+// This class adds a new group and table to the output file, "/DEBUG/steps".
+// This table contains information (position and volume of both the
+// pre- and post-step points, average time, process name and other identifiers)
+// of some steps of the simulation. By default all steps are stored. However,
+// a subset of them can be selected by cherry-picking the volumes and particles
+// involved in the step. This can be achieved with the commands
+// /Actions/SaveAllSteppingAction/select_particle
+// and
+// /Actions/SaveAllSteppingAction/select_volume
+// without the need for re-compilation.
+// It must be noted that the files produced with this action become large
+// very quickly. Therefore, strict filtering and small number of events are
+// encouraged.
 //
 // The NEXT Collaboration
 // ----------------------------------------------------------------------------
@@ -23,7 +34,15 @@ REGISTER_CLASS(SaveAllSteppingAction, G4UserSteppingAction)
 SaveAllSteppingAction::SaveAllSteppingAction():
 G4UserSteppingAction(),
 msg_(0),
-selected_volumes_()
+selected_volumes_(),
+selected_particles_(),
+initial_volumes_(),
+final_volumes_(),
+proc_names_(),
+initial_poss_(),
+final_poss_(),
+times_(),
+kill_after_selection_(false)
 {
   msg_ = new G4GenericMessenger(this, "/Actions/SaveAllSteppingAction/");
 
@@ -34,6 +53,10 @@ selected_volumes_()
   msg_->DeclareMethod("select_volume",
                       &SaveAllSteppingAction::AddSelectedVolume,
                       "add a new volume to select");
+
+  msg_->DeclareProperty("kill_after_selection",
+                        kill_after_selection_,
+                        "Whether to kill a particle after a step has been selected");
 
   PersistencyManager* pm = dynamic_cast<PersistencyManager*>
         (G4VPersistencyManager::GetPersistencyManager());
@@ -63,6 +86,8 @@ void SaveAllSteppingAction::UserSteppingAction(const G4Step* step)
 
   G4ThreeVector initial_pos = pre ->GetPosition();
   G4ThreeVector   final_pos = post->GetPosition();
+  G4double        step_time = (pre->GetGlobalTime()  +
+                              post->GetGlobalTime()) / 2.;
 
   if (! post->GetTouchableHandle()->GetVolume()) return; // Particle exits the world
 
@@ -81,6 +106,10 @@ void SaveAllSteppingAction::UserSteppingAction(const G4Step* step)
 
   initial_poss_   [key].push_back(initial_pos);
     final_poss_   [key].push_back(  final_pos);
+         times_   [key].push_back(  step_time);
+
+  if (kill_after_selection_)
+    step->GetTrack()->SetTrackStatus(fStopAndKill);
 }
 
 
@@ -133,4 +162,5 @@ void SaveAllSteppingAction::Reset()
 
   initial_poss_   .clear();
     final_poss_   .clear();
+         times_   .clear();
 }
