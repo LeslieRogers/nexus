@@ -120,6 +120,17 @@ REGISTER_CLASS(MuonsEventAction, G4UserEventAction)
 
     }
 
+/*
+CJA 8/31/23
+The following code produces a crash in the current version of nexus.
+Root Cause is ROOT - the data below tries to write to ROOT objects
+which don't exist since the ROOT dependency is gone.
+
+Proposed solutions:
+- Omit this code, if it's not needed; OR
+- Write the code to an alternative storage system (hdf5?); OR
+- reintroduce ROOT (YUCK) 
+
     // Retrieving muon generation information
     G4PrimaryVertex* my_vertex = event->GetPrimaryVertex();
     G4VUserPrimaryVertexInformation *getinfo2 = my_vertex->GetUserInformation();
@@ -128,13 +139,15 @@ REGISTER_CLASS(MuonsEventAction, G4UserEventAction)
     G4double my_zenith = my_getinfo2->GetZenith();
     G4double my_azimuth = my_getinfo2->GetAzimuth();
 
+
+
     fG4AnalysisMan_->FillH1(1, my_zenith);
     fG4AnalysisMan_->FillH1(2, my_azimuth);
 
     fG4AnalysisMan_->FillNtupleDColumn(0, my_zenith);
     fG4AnalysisMan_->FillNtupleDColumn(1, my_azimuth);
     fG4AnalysisMan_->AddNtupleRow();
-
+*/
   }
 
 
